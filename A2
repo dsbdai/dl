@@ -1,0 +1,41 @@
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.metrics import classification_report
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.optimizers import SGD
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+((xtrain, ytrain),(xtest, ytest)) = mnist.load_data()
+xtrain = xtrain.astype('float32')/255
+xtest = xtest.astype('float32')/255
+
+l=LabelBinarizer()
+ytrain = l.fit_transform(ytrain)
+ytest=l.fit_transform(ytest)
+
+model = Sequential()
+model.add(Flatten(input_shape=(28,28)))
+model.add(Dense(128, input_shape=(784,), activation='sigmoid'))
+model.add(Dense(64, activation='sigmoid'))
+model.add(Dense(10, activation='softmax'))
+
+epochs=10
+sgd=SGD(0.01)
+model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+h=model.fit(xtrain, ytrain, validation_data=(xtest, ytest), epochs=10, batch_size=128)
+
+prediction = model.predict(xtest, batch_size=128)
+print(classification_report(ytest.argmax(axis=1), prediction.argmax(axis=1), target_names=[str(x) for x in l.classes_]))
+
+plt.figure()
+plt.plot(np.arange(0, epochs), h.history['loss'], label='train loss')
+plt.plot(np.arange(0, epochs), h.history['val_loss'], label='test loss')
+plt.plot(np.arange(0, epochs), h.history['accuracy'], label='train accuracy')
+plt.plot(np.arange(0, epochs), h.history['val_accuracy'], label='test accuracy')
+plt.title("Training Loss and Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss/Accuracy")
+plt.legend()
